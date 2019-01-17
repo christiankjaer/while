@@ -51,7 +51,6 @@ type CompileState = (Node, CFG)
 compile :: Stmt -> CFG
 compile s = snd . snd $ runState (compileStmt s 0 1) (2, startGraph)
 
-
 insertNode :: State CompileState Node
 insertNode = do
     (nextNode, cfg) <- get
@@ -63,7 +62,6 @@ insertEdge :: CFGEdge -> State CompileState ()
 insertEdge e = do
     (nextNode, cfg) <- get
     put (nextNode, insEdge e cfg)
-    return ()
 
 compileStmt :: Stmt -> Node -> Node -> State CompileState ()
 
