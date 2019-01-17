@@ -15,11 +15,11 @@ data Exp = VarExp Reg
          | Less Exp Exp
          | Equal Exp Exp
          | Not Exp
-         deriving (Eq, Show)
+         deriving (Eq, Show, Ord)
 
 data BasicOp = Assign Reg Exp
              | Load Reg Exp
-             | Store Reg Exp
+             | Store Exp Exp
              | Nop
              deriving (Eq, Show)
 

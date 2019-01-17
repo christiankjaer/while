@@ -49,16 +49,22 @@ testCs = [ Constraint "x1" (CUnion (CLit (S.singleton "a")) (CVar "x3"))
          , Constraint "x3" (CUnion (CVar "x1") (CLit (S.singleton "c")))
          ]
 
-initAnalysis :: Ord b => CSystem a b -> CEnv a b
-initAnalysis cs = M.fromList (map (\(Constraint v _) -> (v, S.empty)) cs)
+initAnalysis :: Ord b => SetLattice a -> CSystem a b -> CEnv a b
+initAnalysis lat cs = M.fromList (map (\(Constraint v _) -> (v, bot lat)) cs)
 
-solve :: Ord a => Ord b => CSystem a b -> CEnv a b
-solve cs = iter cs (initAnalysis cs)
+
+data SetLattice a = SetLattice
+    { incl :: S.Set a -> S.Set a -> Bool
+    , bot :: S.Set a
+    }
+
+solve :: Ord a => Ord b => SetLattice a -> CSystem a b -> CEnv a b
+solve lat cs = iter cs (initAnalysis lat cs)
     where
         iter [] env = env
         iter (Constraint x t : cs') env =
             let new = ceval env t
                 infls = S.toList (M.findWithDefault S.empty x (infl cs))
-             in if env M.! x `S.isProperSubsetOf` new
+             in if not (incl lat new (env M.! x))
                    then iter (cs' ++ infls) (M.insert x new env)
                    else iter cs' env
