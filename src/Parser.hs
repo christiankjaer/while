@@ -22,7 +22,7 @@ languageDef =
                                 , "do"
                                 , "skip"
                                 ]
-        , Token.reservedOpNames = [":=", "+", "-", "*", "<", "=", "!"]
+        , Token.reservedOpNames = ["M[", "]", ":=", "+", "-", "*", "<", "=", "!"]
         }
 
 lexer = Token.makeTokenParser languageDef
@@ -64,7 +64,7 @@ sequenceOfStmt = do
     return $ f list
 
 statement' :: Parser Stmt
-statement' = ifStmt <|> whileStmt <|> skipStmt <|> assignStmt
+statement' = ifStmt <|> whileStmt <|> skipStmt <|> storeStmt <|> assignStmt
 
 ifStmt :: Parser Stmt
 ifStmt = do
@@ -84,12 +84,33 @@ whileStmt = do
     s <- statement
     return $ WhileStmt e s
 
+memLoad :: Reg -> Parser BasicOp
+memLoad r = do
+    reservedOp "M["
+    e <- expr
+    reservedOp "]"
+    return $ Load r e
+
+assign :: Reg -> Parser BasicOp
+assign r = do
+    e <- expr
+    return $ Assign r e
+
+
 assignStmt :: Parser Stmt
 assignStmt = do
     var <- identifier
     reservedOp ":="
-    e <- expr
-    return $ BasicStmt (Assign var e)
+    fmap BasicStmt (memLoad var <|> assign var)
+
+storeStmt :: Parser Stmt
+storeStmt = do
+    reservedOp "M["
+    e1 <- expr
+    reservedOp "]"
+    reservedOp ":="
+    e2 <- expr
+    return $ BasicStmt (Store e1 e2)
 
 skipStmt :: Parser Stmt
 skipStmt = reserved "skip" >> return (BasicStmt Nop)

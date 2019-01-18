@@ -8,6 +8,7 @@ type Var = String
 data CTerm a b = CUnion (CTerm a b) (CTerm a b)
              | CInt (CTerm a b) (CTerm a b)
              | CMinus (CTerm a b) (CTerm a b)
+             | CIncl a (CTerm a b) (S.Set a) -- x in L then S else Ø
              | CLit (S.Set a)
              | CVar b
              deriving (Show, Eq, Ord)
@@ -25,6 +26,7 @@ fv (CLit _) = S.empty
 fv (CMinus t1 t2) = fv t1 `S.union` fv t2
 fv (CUnion t1 t2) = fv t1 `S.union` fv t2
 fv (CInt t1 t2) = fv t1 `S.union` fv t2
+fv (CIncl m t _) = fv t
 
 -- Evaluate a set expression
 ceval :: Ord a => Ord b => CEnv a b -> CTerm a b -> S.Set a
@@ -33,6 +35,7 @@ ceval env (CVar v) = M.findWithDefault S.empty v env
 ceval env (CUnion t1 t2) = ceval env t1 `S.union` ceval env t2
 ceval env (CInt t1 t2) = ceval env t1 `S.intersection` ceval env t2
 ceval env (CMinus t1 t2) = ceval env t1 `S.difference` ceval env t2
+ceval env (CIncl m t s) = if m `S.member` ceval env t then s else S.empty
 
 type InfluenceMap a b = M.Map b (S.Set (Constraint a b))
 

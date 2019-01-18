@@ -77,3 +77,35 @@ getAe :: CFG -> CEnv Exp Node
 getAe g =
     let lat = aeLattice (allExpr g)
      in solve lat (aeConstraints g)
+
+tlLattice :: SetLattice Reg
+tlLattice = SetLattice
+    { incl = S.isSubsetOf
+    , bot = S.empty
+    }
+
+-- True liveness
+tlEffect :: CFGEdge -> Constraint Reg Node
+tlEffect (from, to, Pos e) =
+    Constraint from (CUnion (CVar to) (CLit (fvExp e)))
+tlEffect (from, to, Neg e) =
+    Constraint from (CUnion (CVar to) (CLit (fvExp e)))
+tlEffect (from, to, Basic Nop) =
+    Constraint from (CVar to)
+tlEffect (from, to, Basic (Assign r e)) =
+    Constraint from (CUnion (CMinus (CVar to) (CLit (S.singleton r)))
+                            (CIncl r (CVar to) (fvExp e)))
+tlEffect (from, to, Basic (Load r e)) =
+    Constraint from (CUnion (CMinus (CVar to) (CLit (S.singleton r)))
+                            (CIncl r (CVar to) (fvExp e)))
+tlEffect (from, to, Basic (Store e1 e2)) =
+    Constraint from (CUnion (CVar to) (CLit (fvExp e1 `S.union` fvExp e2)))
+
+tlConstraints :: CFG -> CSystem Reg Node
+tlConstraints g =
+    let finalC = map (\n -> Constraint n (CLit S.empty)) (endNodes g)
+     in map tlEffect (labEdges g) ++ finalC
+
+-- Solve true liveness
+getTl :: CFG -> CEnv Reg Node
+getTl g = solve tlLattice (tlConstraints g)

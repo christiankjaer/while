@@ -15,7 +15,21 @@ data Exp = VarExp Reg
          | Less Exp Exp
          | Equal Exp Exp
          | Not Exp
-         deriving (Eq, Show, Ord)
+         deriving (Eq, Ord)
+
+
+showExp :: Exp -> String
+showExp (Lit i) = show i
+showExp (VarExp r) = r
+showExp (Not e) = "!(" ++ show e ++ ")"
+showExp (Equal e1 e2) = "(" ++ show e1 ++ ") == (" ++ show e2 ++ ")"
+showExp (Less e1 e2) = "(" ++ show e1 ++ ") < (" ++ show e2 ++ ")"
+showExp (Plus e1 e2) = "(" ++ show e1 ++ ") + (" ++ show e2 ++ ")"
+showExp (Minus e1 e2) = "(" ++ show e1 ++ ") - (" ++ show e2 ++ ")"
+showExp (Times e1 e2) = "(" ++ show e1 ++ ") * (" ++ show e2 ++ ")"
+
+instance Show Exp where
+    show = showExp
 
 data BasicOp = Assign Reg Exp
              | Load Reg Exp
